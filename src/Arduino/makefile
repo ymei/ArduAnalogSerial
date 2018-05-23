@@ -19,8 +19,8 @@ endif
 ARDMK_DIR     = ./Makefile
 ############################ Project Specific #################################
 BOARD_TAG        = uno
-ARDUINO_LIBS     =
-USER_LIB_PATH   := lib
+ARDUINO_LIBS     = analogShield CmdMessenger SPI
+USER_LIB_PATH   := $(realpath ./)
 CFLAGS_STD       = -std=gnu11
 CXXFLAGS_STD     = -std=gnu++11
 CXXFLAGS        += -pedantic -Wall -Wextra
