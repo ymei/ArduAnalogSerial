@@ -18,13 +18,16 @@ else
 endif
 ARDMK_DIR     = ./Makefile
 ############################ Project Specific #################################
-BOARD_TAG        = uno
-ARDUINO_LIBS     = analogShield CmdMessenger SPI
-USER_LIB_PATH   := $(realpath ./)
-CFLAGS_STD       = -std=gnu11
-CXXFLAGS_STD     = -std=gnu++11
-CXXFLAGS        += -pedantic -Wall -Wextra
+BOARD_TAG        ?= uno
+ifeq ($(BOARD_TAG), mega)
+  BOARD_SUB      ?= atmega2560
+endif
+ARDUINO_LIBS      = analogShield CmdMessenger SPI
+USER_LIB_PATH    := $(realpath ./)
+CFLAGS_STD        = -std=gnu11
+CXXFLAGS_STD      = -std=gnu++11
+CXXFLAGS         += -pedantic -Wall -Wextra
 # The port the board is connected to.  Using an '*' tries all the ports and finds the right one.
-MONITOR_PORT     = /dev/tty.usbmodem*
-MONITOR_BAUDRATE = 9600
+MONITOR_PORT     ?= /dev/tty.usbmodem*
+MONITOR_BAUDRATE ?= 115200
 include $(ARDMK_DIR)/Arduino.mk

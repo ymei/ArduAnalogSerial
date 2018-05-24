@@ -1,47 +1,110 @@
 /**
  * Arduino Analog I/O controlled by serial commands.
  *
- * Controlling Arduino [Analog Shield](https://store.digilentinc.com/analog-shield-high-performance-add-on-board-for-the-arduino-uno-retired/) with [manual](http://analogshield.com/user-manual.html).
+ * Controlling Arduino [Analog Shield](https://store.digilentinc.com/analog-shield-high-performance-add-on-board-for-the-arduino-uno-retired/)
+ * with [manual](http://analogshield.com/user-manual.html).
  */
 
 #include <analogShield.h>
 #include <CmdMessenger.h>
 
-// These constants won't change.  They're used to give names
-// to the pins used:
-const int analogInPin = A0;  // Analog input pin that the potentiometer is attached to
-const int analogOutPin = 9; // Analog output pin that the LED is attached to
+/// Attach a new CmdMessenger object to the default Serial port
+CmdMessenger cmdMessenger = CmdMessenger(Serial);
 
-static int sensorValue = 0;        // value read from the pot
-static int outputValue = 0;        // value output to the PWM (analog out)
-static unsigned int count = 0;
+/// This is the list of recognized commands.  Either sent or received.
+/// In order to receive, attach a callback function to these events
+enum
+{
+    kError=0,
+    kAcknowledge,
+    kAnalogRead,
+    kAnalogWrite,
+    kAnalogWriteM
+};
+
+/// Called when a received command has no attached function
+void onUnknownCommand()
+{
+    cmdMessenger.sendCmd(kError, "Unknown command!");
+}
+
+void onAnalogRead()
+{
+    uint16_t val, ch;
+    bool diff;
+    ch  = cmdMessenger.readInt16Arg();
+    // if there exists a 2nd argument, read differentially.
+    (void)cmdMessenger.readInt16Arg();
+    diff = cmdMessenger.isArgOk();
+    val = analog.read(ch, diff);
+    cmdMessenger.sendCmd(kAnalogRead, val);
+}
+
+void onAnalogWrite()
+{
+    const int N=4;
+    uint16_t v, val[N], cnt;
+    cnt = 0;
+    while(cnt < N) {
+        v = cmdMessenger.readInt16Arg();
+        if(cmdMessenger.isArgOk()) {
+            val[cnt++] = v;
+        } else {
+            break;
+        }
+    }
+    if(cmdMessenger.commandID() == kAnalogWrite) {
+        analog.write(val[0], val[1]);
+        cmdMessenger.sendCmd(cmdMessenger.commandID(), val[0]);
+    } else {
+        switch(cnt) {
+        case 1:
+            analog.write(0, val[0]);
+            break;
+        case 2:
+            analog.write(val[0], val[1], true);
+            break;
+        case 3:
+            analog.write(val[0], val[1], val[2], true);
+            break;
+        case 4:
+            analog.write(val[0], val[1], val[2], val[4], true);
+            break;
+        default:
+            break;
+        }
+        cmdMessenger.sendCmd(cmdMessenger.commandID(), cnt);
+    }
+}
+
+/// Callbacks define on which received commands we take action
+void attachCommandCallbacks()
+{
+    // Attach callback methods
+    cmdMessenger.attach(onUnknownCommand);
+    cmdMessenger.attach(kAnalogRead, onAnalogRead);
+    cmdMessenger.attach(kAnalogWrite, onAnalogWrite);
+    cmdMessenger.attach(kAnalogWriteM, onAnalogWrite);
+}
 
 void setup() {
-    // initialize serial communications at 9600 bps:
-    Serial.begin(9600);
+    // initialize serial communications at a baud rate of 9600
+    Serial.begin(115200);
+    // Adds newline to every command
+    cmdMessenger.printLfCr();
+    // Attach my application's user-defined callback methods
+    attachCommandCallbacks();
+    // Send the status to the PC that says the Arduino has booted
+    // Note that this is a good debug function: it will let you also know
+    // if your program had a bug and the arduino restarted
+    cmdMessenger.sendCmd(kAcknowledge, "ArduAnalogSerial started.");
+    // ZERO outputs
+    analog.write(32767, 32767, 32767, 32767, true);
 }
 
 void loop() {
-    // read the analog in value:
-    sensorValue = analogRead(analogInPin);
-    // map it to the range of the analog out:
-    outputValue = map(sensorValue, 0, 1023, 0, 255);
-    // change the analog out value:
-    analogWrite(analogOutPin, outputValue);
-
-    // print the results to the serial monitor:
-    Serial.print("sensor = " );
-    Serial.print(sensorValue);
-    Serial.print("\t output = ");
-    Serial.println(outputValue);
-
-    // wait 10 milliseconds before the next loop
-    // for the analog-to-digital converter to settle
-    // after the last reading:
-    delay(10);
-
-    count = analog.read(0);  //read in on port labeled 'IN0'
-    analog.write(0, count);  //write out the value on port labeled 'OUT0'
+    // Process incoming serial data, and perform callbacks
+    cmdMessenger.feedinSerialData();
 }
 /* Local Variables: */
 /* mode: c++        */
