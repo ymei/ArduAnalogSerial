@@ -32,7 +32,7 @@ void onAnalogRead()
 {
     uint16_t val, ch;
     bool diff;
-    ch  = cmdMessenger.readInt16Arg();
+    ch = cmdMessenger.readInt16Arg();
     // if there exists a 2nd argument, read differentially.
     (void)cmdMessenger.readInt16Arg();
     diff = cmdMessenger.isArgOk();
@@ -54,8 +54,11 @@ void onAnalogWrite()
         }
     }
     if(cmdMessenger.commandID() == kAnalogWrite) {
-        analog.write(val[0], val[1]);
-        cmdMessenger.sendCmd(cmdMessenger.commandID(), val[0]);
+        analog.write(val[0], val[1]); // channel, value
+        cmdMessenger.sendCmdStart(cmdMessenger.commandID());
+        cmdMessenger.sendCmdArg(val[0]);
+        cmdMessenger.sendCmdArg(val[1]);
+        cmdMessenger.sendCmdEnd();
     } else {
         switch(cnt) {
         case 1:
@@ -68,7 +71,7 @@ void onAnalogWrite()
             analog.write(val[0], val[1], val[2], true);
             break;
         case 4:
-            analog.write(val[0], val[1], val[2], val[4], true);
+            analog.write(val[0], val[1], val[2], val[3], true);
             break;
         default:
             break;
