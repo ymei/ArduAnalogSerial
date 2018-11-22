@@ -8,7 +8,7 @@ ifneq ($(OSTYPE), Linux)
     CC      = clang
     GLLIBS += -lGL -lGLU -lglut
   else ifeq ($(OSTYPE), SunOS)
-      CFLAGS := -c -Wall -std=c99 -pedantic
+      CFLAGS := -c -Wall -std=c99 -Wpedantic
   else
       # Let's assume this is win32
       SHLIB_EXT           := .dll
@@ -26,7 +26,7 @@ ARDUINO_LIBS      = analogShield CmdMessenger SPI
 USER_LIB_PATH    := $(realpath ./)
 CFLAGS_STD        = -std=gnu11
 CXXFLAGS_STD      = -std=gnu++11
-CXXFLAGS         += -pedantic -Wall -Wextra
+CXXFLAGS         += -Wpedantic -Wall -Wextra
 # The port the board is connected to.  Using an '*' tries all the ports and finds the right one.
 MONITOR_PORT     ?= /dev/tty.usbmodem*
 MONITOR_BAUDRATE ?= 115200

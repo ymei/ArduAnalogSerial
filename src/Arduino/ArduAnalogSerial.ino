@@ -19,7 +19,10 @@ enum
     kAcknowledge,
     kAnalogRead,
     kAnalogWrite,
-    kAnalogWriteM
+    kAnalogWriteM,
+    kDigitalPinMode,
+    kDigitalRead,
+    kDigitalWrite
 };
 
 /// Called when a received command has no attached function
@@ -80,6 +83,38 @@ void onAnalogWrite()
     }
 }
 
+void onDigitalPinMode()
+{
+    uint16_t ch, val;
+    ch  = cmdMessenger.readInt16Arg();
+    val = cmdMessenger.readInt16Arg();
+    if(cmdMessenger.isArgOk()) {
+        pinMode(ch, val);
+        cmdMessenger.sendCmd(cmdMessenger.commandID(), val);
+    }
+}
+
+void onDigitalRead()
+{
+    uint16_t ch, val;
+    ch = cmdMessenger.readInt16Arg();
+    if(cmdMessenger.isArgOk()) {
+        val = digitalRead(ch);
+        cmdMessenger.sendCmd(cmdMessenger.commandID(), val);
+    }
+}
+
+void onDigitalWrite()
+{
+    uint16_t ch, val;
+    ch  = cmdMessenger.readInt16Arg();
+    val = cmdMessenger.readInt16Arg();
+    if(cmdMessenger.isArgOk()) {
+        digitalWrite(ch, val);
+        cmdMessenger.sendCmd(cmdMessenger.commandID(), val);
+    }
+}
+
 /// Callbacks define on which received commands we take action
 void attachCommandCallbacks()
 {
@@ -88,6 +123,9 @@ void attachCommandCallbacks()
     cmdMessenger.attach(kAnalogRead, onAnalogRead);
     cmdMessenger.attach(kAnalogWrite, onAnalogWrite);
     cmdMessenger.attach(kAnalogWriteM, onAnalogWrite);
+    cmdMessenger.attach(kDigitalPinMode, onDigitalPinMode);
+    cmdMessenger.attach(kDigitalRead, onDigitalRead);
+    cmdMessenger.attach(kDigitalWrite, onDigitalWrite);
 }
 
 void setup() {
